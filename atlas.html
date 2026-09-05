@@ -155,7 +155,6 @@
     box-shadow: var(--shadow-md);
   }
   .stage-wrap {
-    position: relative;
     display: flex;
     justify-content: center;
   }
@@ -283,34 +282,6 @@
   }
   .stage.mode-hover svg.leaders line.hovered { opacity: 1; }
 
-  /* ---------- Enlarge: the same figure at full size, panned by hand ---------- */
-  .zoom-btn {
-    position: absolute; right: 10px; bottom: 10px; z-index: 5;
-    font: inherit; font-size: 0.82rem; font-weight: 600; padding: 6px 12px;
-    border-radius: 999px; border: 1px solid var(--label-border);
-    background: rgba(255,255,255,0.94); color: var(--ink); cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-  }
-  .zoom-btn:hover { background: #fff; border-color: var(--accent); }
-  .zoom-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .zoom { position: fixed; inset: 0; z-index: 60; background: rgba(20, 24, 34, 0.94); }
-  .zoom-scroller { position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; cursor: grab; }
-  .zoom-scroller.dragging { cursor: grabbing; }
-  .zoom-stage { display: block; max-width: none; margin: 56px 24px 48px; background: #fff; border-radius: 6px; }
-  .zoom-stage img { max-width: none; max-height: none; width: 100%; height: auto; }
-  .zoom-close {
-    position: absolute; top: 12px; right: 12px; z-index: 2;
-    font: inherit; font-size: 0.85rem; font-weight: 600; padding: 8px 14px;
-    border-radius: 999px; border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.14); color: #fff; cursor: pointer;
-  }
-  .zoom-close:hover { background: rgba(255,255,255,0.26); }
-  .zoom-close:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-  .zoom-hint {
-    position: absolute; left: 0; right: 0; bottom: 10px; margin: 0; text-align: center;
-    color: #fff; opacity: 0.7; font-size: 0.78rem; pointer-events: none;
-  }
-
   footer {
     max-width: 1280px;
     margin: 0 auto;
@@ -403,14 +374,6 @@
 
 <footer id="foot">Open Ovis · sheep brain study guide</footer>
 
-<div class="zoom" id="zoom" hidden role="dialog" aria-modal="true" aria-label="Enlarged atlas figure">
-  <div class="zoom-scroller" id="zoomScroller">
-    <div class="stage zoom-stage mode-show" id="zoomStage"><img id="zoomImg" alt=""></div>
-  </div>
-  <button type="button" class="zoom-close" id="zoomClose">Close</button>
-  <p class="zoom-hint">Drag to pan · Esc to close</p>
-</div>
-
 <script>
 
 let MARKERS = [];   // populated from data/<view>.json
@@ -435,13 +398,11 @@ function showPop(m, pill) {
   const chip = document.getElementById('popChip');
   chip.textContent = m.matter || ''; chip.hidden = !m.matter;
   document.getElementById('popAbout').textContent = m.about || '';
-  const figure = pill.parentElement;           // the figure holding this pill: main or enlarged
-  const dock = figure === stage && stage.clientWidth < NARROW_PLATE;
-  const host = dock ? document.getElementById('popDock') : figure;
+  const dock = stage.clientWidth < NARROW_PLATE;
+  const host = dock ? document.getElementById('popDock') : stage;
   if (pop.parentElement !== host) host.appendChild(pop);
   pop.classList.toggle('docked', dock);
   popPill = pill; pop.hidden = false; placePop();
-  if (figure.id === 'zoomStage') pop.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 const NARROW_PLATE = 560;   // px; below this the popover docks under the figure
 function hidePop() { pop.hidden = true; popPill = null; }
@@ -484,8 +445,7 @@ function render() {
 }
 
 /* Draw the labeled figure into a container: leaders, dots, pills, and the
-   hover / tap / keyboard behavior. The main stage and the enlarged copy are
-   built by the same code, so they behave the same. */
+   hover / tap / keyboard behavior. */
 function buildFigure(container, visible) {
   container.querySelectorAll('.marker, .label-pill, svg.leaders').forEach(n => n.remove());
 
@@ -571,8 +531,10 @@ function buildFigure(container, visible) {
   // 44 px hit box is right for a lone dot, but where dots cluster the boxes
   // overlap and the last one in page order would win instead of the closest,
   // and pinch-zoom grows the boxes further. So a tap anywhere on the figure
-  // is measured against every dot and goes to the nearest within reach; a
-  // tap on a pill goes to that pill's dot; a tap on empty plate clears.
+  // is measured against every dot and goes to the nearest within reach. Only
+  // when no dot is in reach does a tap on a pill open that pill's structure,
+  // since on a zoomed phone the pill under the finger is rarely the one meant.
+  // A tap on empty plate clears.
   container._entries = entries;
   if (!container._tapWired) {
     container._tapWired = true;
@@ -581,19 +543,18 @@ function buildFigure(container, visible) {
       if (container.classList.contains('mode-hide')) return;
       const list = container._entries || [];
       e.preventDefault(); e.stopPropagation();
-      const pillEl = e.target.closest && e.target.closest('.label-pill');
-      let hit = pillEl ? list.find(en => en.pill === pillEl) : null;
-      if (!hit) {
-        const img = container.querySelector('img');
-        const r = img.getBoundingClientRect();
-        const px = e.clientX - r.left, py = e.clientY - r.top;
-        const reach = TAP_REACH / ((window.visualViewport && window.visualViewport.scale) || 1);
-        let best = Infinity;
-        list.forEach(en => {
-          const d = Math.hypot(en.m.target.x * r.width - px, en.m.target.y * r.height - py);
-          if (d < best) { best = d; hit = en; }
-        });
-        if (best > reach) hit = null;
+      const img = container.querySelector('img');
+      const r = img.getBoundingClientRect();
+      const px = e.clientX - r.left, py = e.clientY - r.top;
+      const reach = TAP_REACH / ((window.visualViewport && window.visualViewport.scale) || 1);
+      let hit = null, best = Infinity;
+      list.forEach(en => {
+        const d = Math.hypot(en.m.target.x * r.width - px, en.m.target.y * r.height - py);
+        if (d < best) { best = d; hit = en; }
+      });
+      if (best > reach) {
+        const pillEl = e.target.closest && e.target.closest('.label-pill');
+        hit = pillEl ? list.find(en => en.pill === pillEl) || null : null;
       }
       if (hit) togglePinned(hit); else clearPinned();
     }, true);
@@ -652,68 +613,6 @@ if (!CAN_HOVER) {
     "Tap a marker to name the structure. Your instructor's selection determines "
     + 'which structures are shown.';
 }
-
-/* ---------- Enlarge: the same figure at full size ----------
-   The small figure on a phone is an overview; the labels are only readable
-   here. The enlarged copy is built by buildFigure with the current study mode,
-   so tap-to-reveal and the popover work inside it too. */
-(function () {
-  const zoom = document.getElementById('zoom');
-  const scroller = document.getElementById('zoomScroller');
-  const zstage = document.getElementById('zoomStage');
-  const zimg = document.getElementById('zoomImg');
-  const closeBtn = document.getElementById('zoomClose');
-  const btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'zoom-btn'; btn.textContent = 'Enlarge';
-  btn.setAttribute('aria-label', 'Enlarge the figure');
-  document.querySelector('.stage-wrap').appendChild(btn);
-  let lastFocus = null;
-
-  function openZoom() {
-    clearPinned(); hidePop();                    // nothing pinned on the small figure carries over
-    const natural = atlasImg.naturalWidth || 2000;
-    const w = Math.round(Math.min(natural, Math.max(1000, window.innerWidth * 2.6)));
-    zstage.style.width = w + 'px';
-    zstage.style.setProperty('--iw', w + 'px');
-    zstage.className = 'stage zoom-stage ' + Array.from(stage.classList).filter(c => c.indexOf('mode-') === 0).join(' ');
-    zimg.src = atlasImg.src; zimg.alt = atlasImg.alt;
-    const excluded = readFlags();
-    buildFigure(zstage, MARKERS.filter(m => !excluded.has(m.flag)));
-    lastFocus = document.activeElement;
-    zoom.hidden = false;
-    document.body.style.overflow = 'hidden';
-    // centre on the plate now; reading scrollWidth forces the layout
-    scroller.scrollLeft = (scroller.scrollWidth - scroller.clientWidth) / 2;
-    scroller.scrollTop = (scroller.scrollHeight - scroller.clientHeight) / 2;
-    closeBtn.focus();
-  }
-  function closeZoom() {
-    if (zoom.hidden) return;
-    clearPinned(); hidePop();
-    zoom.hidden = true;
-    document.body.style.overflow = '';
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-  }
-  btn.addEventListener('click', openZoom);
-  closeBtn.addEventListener('click', closeZoom);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !zoom.hidden) closeZoom(); });
-  zimg.addEventListener('click', clearPinned);
-
-  // A mouse drags the figure around; touch scrolls natively.
-  let drag = null;
-  scroller.addEventListener('mousedown', e => {
-    if (e.button !== 0 || e.target.closest('.marker, .label-pill, button')) return;
-    drag = { x: e.clientX, y: e.clientY, l: scroller.scrollLeft, t: scroller.scrollTop };
-    scroller.classList.add('dragging');
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', e => {
-    if (!drag) return;
-    scroller.scrollLeft = drag.l - (e.clientX - drag.x);
-    scroller.scrollTop  = drag.t - (e.clientY - drag.y);
-  });
-  window.addEventListener('mouseup', () => { drag = null; scroller.classList.remove('dragging'); });
-})();
 
 /* ---------- load the view ---------- */
 
