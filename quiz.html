@@ -149,31 +149,30 @@
   .xmark {
     position: absolute; transform: translate(-50%,-50%); z-index: 3;
     pointer-events: none;
-    /* a reticle: a bold ring around the structure, open in the middle, with
-       short X arms pointing in from outside. The white double edge keeps the
-       navy visible on any tissue. Sized from the rendered plate width. */
-    --ring: clamp(22px, calc(var(--iw,1000px) * .03), 56px);
-    --bar: clamp(2.5px, calc(var(--iw,1000px) * .0025), 4px);
-    width: var(--ring); height: var(--ring);
+    /* Dot and ping, chosen from the marker mockups at 0.85x: a small navy dot
+       with a white edge on the target, and a ring that radiates outward and
+       fades. With motion off the ring rests at its starting size. Sized from
+       the rendered plate width. */
+    --ring: calc(clamp(22px, calc(var(--iw,1000px) * .03), 56px) * .85);
+    --bar: calc(clamp(2.5px, calc(var(--iw,1000px) * .0025), 4px) * .85);
+    width: calc(var(--ring) * .4); height: calc(var(--ring) * .4);
     border-radius: 50%;
-    border: var(--bar) solid var(--marker);
-    box-shadow: 0 0 0 2px rgba(255,255,255,.95), inset 0 0 0 2px rgba(255,255,255,.95);
-    animation: xmark-breathe 2.4s ease-in-out infinite;
+    background: var(--marker);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
   }
-  .xmark::before, .xmark::after {
+  .xmark::before {
     content: ""; position: absolute; left: 50%; top: 50%;
-    width: var(--bar); height: calc(var(--ring) * 1.9);
-    background: linear-gradient(to bottom, var(--marker) 0 22%, transparent 22% 78%, var(--marker) 78% 100%);
-    border-radius: 2px;
-    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px rgba(255,255,255,.9));
+    width: var(--ring); height: var(--ring); border-radius: 50%;
+    border: var(--bar) solid var(--marker);
+    transform: translate(-50%,-50%); opacity: .9;
+    animation: xmark-ping 1.8s ease-out infinite;
   }
-  .xmark::before { transform: translate(-50%,-50%) rotate(45deg); }
-  .xmark::after  { transform: translate(-50%,-50%) rotate(-45deg); }
-  @keyframes xmark-breathe {
-    0%, 100% { transform: translate(-50%,-50%) scale(1); }
-    50%      { transform: translate(-50%,-50%) scale(1.1); }
+  @keyframes xmark-ping {
+    0%   { transform: translate(-50%,-50%) scale(.5); opacity: .95; }
+    100% { transform: translate(-50%,-50%) scale(1.9); opacity: 0; }
   }
-  @media (prefers-reduced-motion: reduce) { .xmark { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .xmark::before { animation: none; } }
 
   /* reveal marker on the feedback screen */
   .revealdot {
@@ -303,7 +302,7 @@
   .options select:focus-visible, .options input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .options .check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
   .options .check span { color: var(--muted); }
-  .still .xmark { animation: none; }
+  .still .xmark::before { animation: none; }
 
   /* describe-it: the definition stands in for the marked photo */
   .describe { margin: 6px 0 10px; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; color: var(--ink); line-height: 1.5; font-size: 1.02rem; }
@@ -346,7 +345,7 @@
     <p id="startBlurb">Choose how you want to be tested. Order is randomized each time.</p>
     <div class="modes" role="radiogroup" aria-label="Quiz mode">
       <button type="button" class="mode active" data-mode="name" role="radio" aria-checked="true" tabindex="0">
-        <strong>Name it</strong><span>An X marks a structure on the photo. You type its name.</span>
+        <strong>Name it</strong><span>A pulsing dot marks a structure on the photo. You type its name.</span>
       </button>
       <button type="button" class="mode" data-mode="find" role="radio" aria-checked="false" tabindex="-1">
         <strong>Find it</strong><span>You are given a name. You tap where it is on the photo.</span>
@@ -391,7 +390,7 @@
 
     <!-- asking -->
     <div class="card answer" id="panelAsk">
-      <p class="prompt" id="promptName">Identify the structure marked by the <strong>X</strong>.</p>
+      <p class="prompt" id="promptName">Identify the structure marked by the <strong>pulsing dot</strong>.</p>
       <p class="prompt" id="promptFind" hidden>Find the <strong id="findName"></strong>.</p>
       <p class="prompt" id="promptDescribe" hidden>Which structure is this?</p>
       <blockquote class="describe" id="describeText" hidden></blockquote>
@@ -648,7 +647,7 @@
     if (!find) el('answerInput').focus();
 
     el('plate').alt = 'Sheep brain ' + state.data.label.toLowerCase()
-      + (describe ? ' section, unmarked.' : find ? ' section. Tap the location of the named structure.' : ' section with one structure marked by an X');
+      + (describe ? ' section, unmarked.' : find ? ' section. Tap the location of the named structure.' : ' section with one structure marked by a pulsing dot');
 
     startTimer();
   }
