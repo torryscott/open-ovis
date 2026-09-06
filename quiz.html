@@ -145,26 +145,30 @@
   /* The target: an X that breathes slightly (scale 1 to 1.1 over 2.4 s) so
      it is findable on busy cortex without being a strobe. Sized off the
      rendered image width, with a floor that keeps it legible on phones
-     (18 px) and a cap for large screens. Static under reduced-motion. */
+     (22 px) and a cap for large screens. Static under reduced-motion. */
   .xmark {
     position: absolute; transform: translate(-50%,-50%); z-index: 3;
-    width: clamp(18px, calc(var(--iw,1000px) * .024), 40px);
-    height: clamp(18px, calc(var(--iw,1000px) * .024), 40px);
     pointer-events: none;
+    /* a reticle: a bold ring around the structure, open in the middle, with
+       short X arms pointing in from outside. The white double edge keeps the
+       navy visible on any tissue. Sized from the rendered plate width. */
+    --ring: clamp(22px, calc(var(--iw,1000px) * .03), 56px);
+    --bar: clamp(2.5px, calc(var(--iw,1000px) * .0025), 4px);
+    width: var(--ring); height: var(--ring);
+    border-radius: 50%;
+    border: var(--bar) solid var(--marker);
+    box-shadow: 0 0 0 2px rgba(255,255,255,.95), inset 0 0 0 2px rgba(255,255,255,.95);
     animation: xmark-breathe 2.4s ease-in-out infinite;
   }
-  /* Each diagonal is a bar with its middle left transparent, so the four arms
-     point at the structure without lying on top of it. The white halo is a
-     drop shadow rather than a box shadow so the gap stays open. */
   .xmark::before, .xmark::after {
-    content: ""; position: absolute; left: 50%; top: 0;
-    width: clamp(1.5px, calc(var(--iw,1000px) * .0017), 2.5px); height: 100%;
-    background: linear-gradient(to bottom, var(--marker) 0 30%, transparent 30% 70%, var(--marker) 70% 100%);
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: var(--bar); height: calc(var(--ring) * 1.9);
+    background: linear-gradient(to bottom, var(--marker) 0 22%, transparent 22% 78%, var(--marker) 78% 100%);
     border-radius: 2px;
-    filter: drop-shadow(0 0 .8px #fff) drop-shadow(0 0 .8px rgba(255,255,255,.9));
+    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px rgba(255,255,255,.9));
   }
-  .xmark::before { transform: translateX(-50%) rotate(45deg); }
-  .xmark::after  { transform: translateX(-50%) rotate(-45deg); }
+  .xmark::before { transform: translate(-50%,-50%) rotate(45deg); }
+  .xmark::after  { transform: translate(-50%,-50%) rotate(-45deg); }
   @keyframes xmark-breathe {
     0%, 100% { transform: translate(-50%,-50%) scale(1); }
     50%      { transform: translate(-50%,-50%) scale(1.1); }
