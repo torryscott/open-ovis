@@ -189,6 +189,55 @@
          filter: drop-shadow(0 0 1px var(--edge)); }
   .animate .v18::before { animation: orbit 7s linear infinite; }
 
+  /* ---- pings: variations on 6 ---- */
+  @keyframes pingIn { 0% { transform: translate(-50%,-50%) scale(2.1); opacity: 0; } 30% { opacity: .9; } 100% { transform: translate(-50%,-50%) scale(.45); opacity: 0; } }
+  @keyframes glow { 0% { transform: translate(-50%,-50%) scale(.3); opacity: .75; } 100% { transform: translate(-50%,-50%) scale(1.9); opacity: 0; } }
+  @keyframes pingSlow { 0% { transform: translate(-50%,-50%) scale(.5); opacity: .95; } 100% { transform: translate(-50%,-50%) scale(2.3); opacity: 0; } }
+  .pingring { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+              border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; }
+
+  /* 19 ping only: the radiating ring with nothing in the middle */
+  .v19 { width: var(--R); height: var(--R); }
+  .v19::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+                 border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; filter: drop-shadow(0 0 1px var(--edge)); }
+  .animate .v19::before { animation: ping 1.8s ease-out infinite; }
+
+  /* 20 double ping: two rings, staggered, like sonar */
+  .v20 { width: calc(var(--R) * .4); height: calc(var(--R) * .4); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .v20::before, .v20::after { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+                 border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; }
+  .animate .v20::before { animation: ping 2s ease-out infinite; }
+  .animate .v20::after  { animation: ping 2s ease-out infinite 1s; }
+
+  /* 21 ping and ring: a thin fixed ring stays, the ping radiates from it */
+  .v21 { width: calc(var(--R) * .7); height: calc(var(--R) * .7); border-radius: 50%; border: calc(var(--B) * .8) solid var(--marker);
+         box-shadow: 0 0 0 1.5px var(--edge), inset 0 0 0 1.5px var(--edge); }
+  .v21::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+                 border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; }
+  .animate .v21::before { animation: ping 1.8s ease-out infinite; }
+
+  /* 22 soft ping: a translucent disc swells and fades around the dot */
+  .v22 { width: calc(var(--R) * .35); height: calc(var(--R) * .35); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .v22::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+                 background: color-mix(in srgb, var(--marker) 45%, transparent); transform: translate(-50%,-50%); opacity: .75; }
+  .animate .v22::before { animation: glow 1.8s ease-out infinite; }
+
+  /* 23 homing ping: the ring shrinks onto the spot instead of leaving it */
+  .v23 { width: calc(var(--R) * .4); height: calc(var(--R) * .4); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .v23::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+                 border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; }
+  .animate .v23::before { animation: pingIn 1.8s ease-in infinite; }
+
+  /* 24 slow ping: larger and gentler, for anyone who finds the fast one busy */
+  .v24 { width: calc(var(--R) * .4); height: calc(var(--R) * .4); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .v24::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
+                 border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; }
+  .animate .v24::before { animation: pingSlow 3.2s ease-out infinite; }
+
   /* 10 spotlight: everything else dims */
   .v10 { width: calc(var(--R) * 1.7); height: calc(var(--R) * 1.7); border-radius: 50%;
          box-shadow: 0 0 0 2px var(--edge), 0 0 0 9999px color-mix(in srgb, var(--dim) calc(var(--dimA) * 100%), transparent); }
@@ -209,7 +258,7 @@
 <header>
   <div class="eyebrow"><a href="../index.html">Open Ovis</a> · Mockup</div>
   <h1>Quiz marker candidates</h1>
-  <p>Eighteen ways to mark the structure being asked about: ten X-and-ring designs, six built on a dot, and two orbits. Pick one, move it onto any structure, resize and recolor it, and look at it here and on a phone.</p>
+  <p>Twenty-four ways to mark the structure being asked about: ten X-and-ring designs, six built on a dot, two orbits, and six pings. Pick one, move it onto any structure, resize and recolor it, and look at it here and on a phone.</p>
 </header>
 
 <main id="main">
@@ -270,6 +319,12 @@ const VARIANTS = [
   { id: 'v16', name: 'Map pin',            desc: 'A pin with its tip on the spot. Covers nothing at the point.', breathes: false },
   { id: 'v17', name: 'Orbit',              desc: 'The turning dashed ring on its own. Nothing in the middle.', breathes: false },
   { id: 'v18', name: 'Orbit and ring',     desc: 'A thin fixed ring inside the turning one. Open in the middle.', breathes: false },
+  { id: 'v19', name: 'Ping only',          desc: 'The radiating ring with nothing in the middle.', breathes: false },
+  { id: 'v20', name: 'Double ping',        desc: 'Two rings, staggered, like sonar.', breathes: false },
+  { id: 'v21', name: 'Ping and ring',      desc: 'A thin fixed ring stays; the ping radiates from it. Open in the middle.', breathes: false },
+  { id: 'v22', name: 'Soft ping',          desc: 'A translucent disc swells and fades around the dot.', breathes: false },
+  { id: 'v23', name: 'Homing ping',        desc: 'The ring shrinks onto the spot instead of leaving it.', breathes: false },
+  { id: 'v24', name: 'Slow ping',          desc: 'Larger and gentler, for anyone who finds the fast one busy.', breathes: false },
 ];
 const INNER = {
   v7: '<svg viewBox="0 0 48 48" aria-hidden="true"><g class="halo" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g><g class="ink" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g></svg>',
