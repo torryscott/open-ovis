@@ -175,7 +175,23 @@
     border-radius: var(--radius-lg);
     padding: 18px;
     box-shadow: var(--shadow-md);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
   }
+  /* Wide screens: the definition reads in a column beside the plate, so it
+     never covers tissue. Narrow screens: it sits under the plate. */
+  @media (min-width: 1000px) {
+    .atlas-card { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
+    .detail { position: sticky; top: 12px; }
+  }
+  .detail {
+    background: var(--bg, #f4f6f9); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 12px 14px 13px; min-height: 96px;
+    font-size: .9rem; line-height: 1.45; color: var(--ink-soft);
+  }
+  .pop-empty { margin: 0; color: var(--muted); }
   .stage-wrap {
     display: flex;
     justify-content: center;
@@ -353,15 +369,7 @@
      Absolutely positioned over the plate, so it never moves the layout, and
      transparent to the pointer, so the cursor cannot land on it and lose the
      marker underneath. */
-  .pop {
-    position: absolute; z-index: 6; pointer-events: none;
-    width: min(300px, calc(100% - 24px));
-    background: rgba(255,255,255,.97); border: 1px solid var(--rule-strong); border-radius: 10px;
-    padding: 10px 12px 11px; box-shadow: 0 6px 22px rgba(20,20,30,.16);
-    font-size: .9rem; line-height: 1.45; color: var(--ink-soft);
-  }
-  /* On a narrow figure the card would cover the plate, so it docks beneath it instead. */
-  .pop.docked { position: static; width: auto; max-width: none; margin: 12px 0 2px; pointer-events: auto; box-shadow: none; }
+  .pop { margin: 0; }
   .pop-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
   .pop-name { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 1.05rem; color: var(--ink); }
   .pop-chip {
@@ -402,13 +410,15 @@
         <img id="atlasImg" alt="">
       </div>
     </div>
-    <div id="popDock"></div>
+    <aside class="detail" id="detail" aria-label="About the selected structure">
+      <p class="pop-empty" id="popEmpty">Hover a marker to see its name. Click it to read about it.</p>
+      <div class="pop" id="pop" role="status" aria-live="polite" hidden>
+        <div class="pop-head"><span class="pop-name" id="popName"></span><span class="pop-chip" id="popChip"></span></div>
+        <p class="pop-about" id="popAbout"></p>
+      </div>
+    </aside>
     <h2 class="sr-only">Labeled structures in this view</h2>
     <ul id="srList" class="sr-only" aria-live="polite"></ul>
-    <div class="pop" id="pop" role="status" aria-live="polite" hidden>
-      <div class="pop-head"><span class="pop-name" id="popName"></span><span class="pop-chip" id="popChip"></span></div>
-      <p class="pop-about" id="popAbout"></p>
-    </div>
   </div>
 
   <!-- The figure as text: every shown structure with its tissue type and
@@ -439,35 +449,15 @@ function readFlags() {
 const srList = document.getElementById('srList');
 
 const pop = document.getElementById('pop');
-stage.appendChild(pop);   // positioned relative to the plate, so it must live inside its box
-let popPill = null;
-function showPop(m, pill) {
+const popEmpty = document.getElementById('popEmpty');
+function showPop(m) {
   document.getElementById('popName').textContent = m.text;
   const chip = document.getElementById('popChip');
   chip.textContent = m.matter || ''; chip.hidden = !m.matter;
   document.getElementById('popAbout').textContent = m.about || '';
-  const dock = stage.clientWidth < NARROW_PLATE;
-  const host = dock ? document.getElementById('popDock') : stage;
-  if (pop.parentElement !== host) host.appendChild(pop);
-  pop.classList.toggle('docked', dock);
-  popPill = pill; pop.hidden = false; placePop();
+  pop.hidden = false; popEmpty.hidden = true;
 }
-const NARROW_PLATE = 560;   // px; below this the popover docks under the figure
-function hidePop() { pop.hidden = true; popPill = null; }
-/* Below the label if there is room, else above; kept inside the plate sideways. */
-function placePop() {
-  if (pop.hidden || !popPill) return;
-  if (pop.classList.contains('docked')) { pop.style.left = ''; pop.style.top = ''; return; }
-  const S = popPill.parentElement.getBoundingClientRect(), P = popPill.getBoundingClientRect();
-  const w = pop.offsetWidth, h = pop.offsetHeight, gap = 8;
-  let left = P.left - S.left + P.width / 2 - w / 2;
-  left = Math.max(8, Math.min(left, S.width - w - 8));
-  let top = P.bottom - S.top + gap;
-  if (top + h > S.height - 4) top = P.top - S.top - gap - h;
-  if (top < 4) top = 4;
-  pop.style.left = left + 'px'; pop.style.top = top + 'px';
-}
-window.addEventListener('resize', placePop);
+function hidePop() { pop.hidden = true; popEmpty.hidden = false; }
 
 
 /* Does this device have a real hover-capable pointer? A phone or tablet
@@ -567,28 +557,22 @@ function buildFigure(container, visible) {
     pill.setAttribute('aria-hidden', 'true');
     container.appendChild(pill);
 
+    // Hover names, click reads. A mouse hover only highlights the dot and
+    // its pill; the definition panel changes on a click (pin), a tap, or
+    // keyboard focus, so scanning the plate never churns the panel.
     const entry = {};
-    const enter = () => {
-      showPop(m, pill);
-      dot.classList.add('hovered');
-      pill.classList.add('hovered');
-      line.classList.add('hovered');
-    };
-    const leave = () => {
-      if (pinned !== entry) hidePop();
-      dot.classList.remove('hovered');
-      pill.classList.remove('hovered');
-      line.classList.remove('hovered');
-    };
-    entry.enter = enter; entry.leave = leave; entry.m = m; entry.pill = pill;
+    const highlight = () => { dot.classList.add('hovered'); pill.classList.add('hovered'); line.classList.add('hovered'); };
+    const unhighlight = () => { dot.classList.remove('hovered'); pill.classList.remove('hovered'); line.classList.remove('hovered'); };
+    const enter = () => { showPop(m); highlight(); };
+    entry.enter = enter; entry.leave = unhighlight; entry.m = m; entry.pill = pill;
     entries.push(entry);
 
     // Pointer hover — only where hovering is actually possible.
     if (CAN_HOVER) {
-      dot.addEventListener('mouseenter', enter);
-      dot.addEventListener('mouseleave', () => { if (pinned !== entry) leave(); });
-      pill.addEventListener('mouseenter', enter);
-      pill.addEventListener('mouseleave', () => { if (pinned !== entry) leave(); });
+      dot.addEventListener('mouseenter', highlight);
+      dot.addEventListener('mouseleave', () => { if (pinned !== entry) unhighlight(); });
+      pill.addEventListener('mouseenter', highlight);
+      pill.addEventListener('mouseleave', () => { if (pinned !== entry) unhighlight(); });
     }
 
     // Keyboard. Focus that came from a tap (Android focuses a tapped button)
@@ -598,7 +582,7 @@ function buildFigure(container, visible) {
       try { keyboard = dot.matches(':focus-visible'); } catch (_) {}
       if (keyboard) enter();
     });
-    dot.addEventListener('blur', () => { if (pinned !== entry) leave(); });
+    dot.addEventListener('blur', () => { if (pinned !== entry) { unhighlight(); hidePop(); } });
 
     // Keyboard activation (Enter or Space on the focused dot). Pointer taps
     // never reach this handler: the figure resolves them by distance below.
@@ -696,6 +680,7 @@ atlasImg.addEventListener('click', clearPinned);
 // Keyed off input capability rather than screen width, so a tablet is
 // treated correctly regardless of how wide it is.
 if (!CAN_HOVER) {
+  popEmpty.textContent = 'Tap a marker to read about it.';
   const revealBtn = document.querySelector('.mode-group button[data-mode="hover"]');
   if (revealBtn) {
     revealBtn.textContent = 'Tap to reveal';
