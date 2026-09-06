@@ -176,6 +176,19 @@
   .animate .v16 { animation: bob 1.8s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { transform: translate(-50%,-100%); } 50% { transform: translate(-50%, calc(-100% - 5px)); } }
 
+  /* 17 orbit only: the turning dashed ring, nothing inside */
+  .v17 { width: calc(var(--R) * 1.2); height: calc(var(--R) * 1.2); border-radius: 50%;
+         border: var(--B) dashed var(--marker); filter: drop-shadow(0 0 1px var(--edge)) drop-shadow(0 0 1px var(--edge)); }
+  .animate .v17 { animation: orbit 7s linear infinite; }
+
+  /* 18 orbit and ring: a thin fixed ring inside the turning one */
+  .v18 { width: calc(var(--R) * .8); height: calc(var(--R) * .8); border-radius: 50%; border: calc(var(--B) * .8) solid var(--marker);
+         box-shadow: 0 0 0 1.5px var(--edge), inset 0 0 0 1.5px var(--edge); }
+  .v18::before { content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--R) * 1.4); height: calc(var(--R) * 1.4);
+         border-radius: 50%; border: var(--B) dashed var(--marker); transform: translate(-50%,-50%);
+         filter: drop-shadow(0 0 1px var(--edge)); }
+  .animate .v18::before { animation: orbit 7s linear infinite; }
+
   /* 10 spotlight: everything else dims */
   .v10 { width: calc(var(--R) * 1.7); height: calc(var(--R) * 1.7); border-radius: 50%;
          box-shadow: 0 0 0 2px var(--edge), 0 0 0 9999px color-mix(in srgb, var(--dim) calc(var(--dimA) * 100%), transparent); }
@@ -196,7 +209,7 @@
 <header>
   <div class="eyebrow"><a href="../index.html">Open Ovis</a> · Mockup</div>
   <h1>Quiz marker candidates</h1>
-  <p>Sixteen ways to mark the structure being asked about, ten X-and-ring designs and six built on a dot. Pick one, move it onto any structure, resize and recolor it, and look at it here and on a phone.</p>
+  <p>Eighteen ways to mark the structure being asked about: ten X-and-ring designs, six built on a dot, and two orbits. Pick one, move it onto any structure, resize and recolor it, and look at it here and on a phone.</p>
 </header>
 
 <main id="main">
@@ -255,6 +268,8 @@ const VARIANTS = [
   { id: 'v14', name: 'Bullseye',           desc: 'A ring with a small dot at the center.', breathes: true },
   { id: 'v15', name: 'Dot and orbit',      desc: 'A dot with a dashed ring turning slowly around it.', breathes: false },
   { id: 'v16', name: 'Map pin',            desc: 'A pin with its tip on the spot. Covers nothing at the point.', breathes: false },
+  { id: 'v17', name: 'Orbit',              desc: 'The turning dashed ring on its own. Nothing in the middle.', breathes: false },
+  { id: 'v18', name: 'Orbit and ring',     desc: 'A thin fixed ring inside the turning one. Open in the middle.', breathes: false },
 ];
 const INNER = {
   v7: '<svg viewBox="0 0 48 48" aria-hidden="true"><g class="halo" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g><g class="ink" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g></svg>',
