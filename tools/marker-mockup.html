@@ -140,6 +140,42 @@
   .v9 { width: calc(var(--R) * 1.1); height: calc(var(--R) * 1.1); border-radius: 50%; border: calc(var(--B) * 1.2) solid var(--alt);
         box-shadow: 0 0 0 2px var(--marker), inset 0 0 0 2px var(--marker); }
 
+  /* 11 solid dot */
+  .v11 { width: calc(var(--R) * .55); height: calc(var(--R) * .55); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+
+  /* 12 dot with a soft halo */
+  .v12 { width: calc(var(--R) * .5); height: calc(var(--R) * .5); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge);
+         box-shadow: 0 0 0 calc(var(--R) * .3) color-mix(in srgb, var(--marker) 32%, transparent), 0 1px 3px rgba(0,0,0,.35); }
+
+  /* 13 donut: a thick ring with a small hole */
+  .v13 { width: calc(var(--R) * .85); height: calc(var(--R) * .85); border-radius: 50%; border: calc(var(--B) * 2.6) solid var(--marker);
+         box-shadow: 0 0 0 2px var(--edge), inset 0 0 0 2px var(--edge); }
+
+  /* 14 bullseye: a ring with a dot in the middle */
+  .v14 { width: var(--R); height: var(--R); border-radius: 50%; border: var(--B) solid var(--marker);
+         box-shadow: 0 0 0 2px var(--edge), inset 0 0 0 2px var(--edge); }
+  .v14::after { content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--R) * .3); height: calc(var(--R) * .3);
+         border-radius: 50%; background: var(--marker); border: 1.5px solid var(--edge); transform: translate(-50%,-50%); }
+
+  /* 15 dot with an orbiting dashed ring */
+  .v15 { width: calc(var(--R) * .45); height: calc(var(--R) * .45); border-radius: 50%; background: var(--marker);
+         border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .v15::before { content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--R) * 1.3); height: calc(var(--R) * 1.3);
+         border-radius: 50%; border: var(--B) dashed var(--marker); transform: translate(-50%,-50%);
+         filter: drop-shadow(0 0 1px var(--edge)); }
+  .animate .v15::before { animation: orbit 7s linear infinite; }
+  @keyframes orbit { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  /* 16 map pin: the tip sits on the spot */
+  .v16 { width: calc(var(--R) * 1.15); height: calc(var(--R) * 1.55); transform: translate(-50%, -100%); }
+  .v16 svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .v16 .pin { fill: var(--marker); stroke: var(--edge); }
+  .v16 .hole { fill: var(--edge); }
+  .animate .v16 { animation: bob 1.8s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: translate(-50%,-100%); } 50% { transform: translate(-50%, calc(-100% - 5px)); } }
+
   /* 10 spotlight: everything else dims */
   .v10 { width: calc(var(--R) * 1.7); height: calc(var(--R) * 1.7); border-radius: 50%;
          box-shadow: 0 0 0 2px var(--edge), 0 0 0 9999px color-mix(in srgb, var(--dim) calc(var(--dimA) * 100%), transparent); }
@@ -160,7 +196,7 @@
 <header>
   <div class="eyebrow"><a href="../index.html">Open Ovis</a> · Mockup</div>
   <h1>Quiz marker candidates</h1>
-  <p>Ten ways to mark the structure being asked about. Pick a design, move it onto any structure, resize it, and look at it here and on a phone.</p>
+  <p>Sixteen ways to mark the structure being asked about, ten X-and-ring designs and six built on a dot. Pick one, move it onto any structure, resize and recolor it, and look at it here and on a phone.</p>
 </header>
 
 <main id="main">
@@ -213,10 +249,17 @@ const VARIANTS = [
   { id: 'v8',  name: 'Focus brackets',     desc: 'Four corners of a square, like a camera focus box.', breathes: true },
   { id: 'v9',  name: 'Two-tone ring',      desc: 'A ring in the alt color, edged in the marker color.', breathes: true },
   { id: 'v10', name: 'Spotlight',          desc: 'Everything except a window around the structure dims.', breathes: false },
+  { id: 'v11', name: 'Solid dot',          desc: 'A plain filled dot with an edge. The atlas marker, larger.', breathes: true },
+  { id: 'v12', name: 'Dot and halo',       desc: 'A filled dot inside a soft translucent halo.', breathes: true },
+  { id: 'v13', name: 'Donut',              desc: 'A thick ring with a small hole, between a dot and a ring.', breathes: true },
+  { id: 'v14', name: 'Bullseye',           desc: 'A ring with a small dot at the center.', breathes: true },
+  { id: 'v15', name: 'Dot and orbit',      desc: 'A dot with a dashed ring turning slowly around it.', breathes: false },
+  { id: 'v16', name: 'Map pin',            desc: 'A pin with its tip on the spot. Covers nothing at the point.', breathes: false },
 ];
 const INNER = {
   v7: '<svg viewBox="0 0 48 48" aria-hidden="true"><g class="halo" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g><g class="ink" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g></svg>',
   v8: '<i></i><i></i><i></i><i></i>',
+  v16: '<svg viewBox="0 0 24 32" aria-hidden="true"><path class="pin" stroke-width="1.6" d="M12 31 C12 31 2.5 19.5 2.5 11.5 A9.5 9.5 0 0 1 21.5 11.5 C21.5 19.5 12 31 12 31 Z"/><circle class="hole" cx="12" cy="11.5" r="3.6"/></svg>',
 };
 
 const stage = document.getElementById('stage'), plate = document.getElementById('plate'), mk = document.getElementById('mk');
