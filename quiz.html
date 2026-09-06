@@ -304,6 +304,15 @@
   .options .check span { color: var(--muted); }
   .still .xmark::before { animation: none; }
 
+  /* choose a set */
+  .sets { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; max-width: 900px; margin: 14px auto 0; text-align: left; }
+  .set { display: block; text-decoration: none; color: var(--ink); padding: 14px; border: 1.5px solid var(--rule-strong); border-radius: 12px; background: var(--panel); }
+  .set:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .set:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .set strong { display: block; font-size: 1.05rem; }
+  .set span { display: block; font-size: .85rem; color: var(--muted); line-height: 1.35; margin: 2px 0 8px; }
+  .set em { font-style: normal; font-size: .75rem; color: var(--accent); font-weight: 600; letter-spacing: .04em; }
+
   /* describe-it: the definition stands in for the marked photo */
   .describe { margin: 6px 0 10px; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; color: var(--ink); line-height: 1.5; font-size: 1.02rem; }
 
@@ -325,6 +334,7 @@
   .tapmark.wrong { border-color: var(--wrong); }
 </style>
 <script src="codes.js"></script>
+<script src="views.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -338,6 +348,13 @@
 </header>
 
 <main class="wrap" id="main">
+
+  <!-- ============ CHOOSE A SET ============ -->
+  <section class="card start" id="screenChoose" hidden>
+    <h1>What do you want to be tested on?</h1>
+    <p>Pick a group of views, or everything at once. A run covers the structures of every view in the group.</p>
+    <div class="sets" id="setCards"></div>
+  </section>
 
   <!-- ============ START ============ -->
   <section class="card start" id="screenStart">
@@ -363,8 +380,15 @@
         <option value="0">No limit</option>
       </select>
       <label class="check"><input type="checkbox" id="stillX"> Still marker <span>(no pulsing)</span></label>
+      <label for="countSel">How many</label>
+      <select id="countSel">
+        <option value="0">All of them</option>
+        <option value="25">25 at random</option>
+        <option value="10">10 at random</option>
+      </select>
+      <label class="check" id="mixWrap" hidden><input type="checkbox" id="mixViews"> Shuffle across views <span>(otherwise one view at a time)</span></label>
     </div>
-    <div class="count"><strong id="startCount">0</strong> structures in this set</div>
+    <div class="count"><strong id="startCount">0</strong><span id="countNote"> structures in this set</span></div>
     <div class="actions">
       <button class="primary" id="btnBegin" type="button">Begin</button>
     </div>
@@ -376,6 +400,7 @@
       <span class="progress-text">Question <strong id="qNum">1</strong> of <strong id="qTotal">0</strong></span>
       <span class="track"><i id="trackFill"></i></span>
       <span class="progress-text">Correct <strong id="qScore">0</strong></span>
+      <span class="progress-text" id="qView"></span>
       <span class="timer" id="timer">1:00</span>
     </div>
 
@@ -474,8 +499,14 @@
     tick: null,
     remaining: QUESTION_SECONDS,
     limit: QUESTION_SECONDS,         // seconds per question; 0 means no limit
-    mode: 'name'
+    mode: 'name',
+    views: [],                       // [{id, data, allowed}] for the views in this run
+    viewsById: {}
   };
+  /* The structures of a question's own view that are in play: the candidates
+     a Find it tap is measured against, and the keyboard hotspots. */
+  function viewAllowed(s) { var v = state.viewsById[s._view]; return v ? v.allowed : (state.allowed || []); }
+  function viewLabel(s) { var v = state.viewsById[s._view]; return v ? v.data.label : ''; }
 
   /* ---------- flag filtering, same convention as the atlas ---------- */
   function excludedFlags() { return OPENOVIS.excludedMap(); }   // ?off= or the long form
@@ -597,6 +628,11 @@
     state.answered = false;
     clearOverlays();
 
+    // a run can span several views: the plate follows the question
+    var v = state.viewsById[s._view];
+    if (v && el('plate').dataset.view !== v.id) { el('plate').src = v.data.image; el('plate').dataset.view = v.id; }
+    el('qView').textContent = state.views.length > 1 && v ? v.data.label : '';
+
     if (describe) {
       // nothing on the plate: the definition is the question
     } else if (!find) {
@@ -609,9 +645,10 @@
       // Keyboard access to the plate: one invisible button per candidate
       // structure, in a shuffled order and named only by position, so the
       // list gives nothing away. Enter on one is a tap at that spot.
-      var order = shuffle(state.allowed.length);
+      var cand = viewAllowed(s);
+      var order = shuffle(cand.length);
       order.forEach(function (i, k) {
-        var c = state.allowed[i];
+        var c = cand[i];
         var h = document.createElement('button');
         h.type = 'button'; h.className = 'hotspot';
         h.setAttribute('aria-label', 'Location ' + (k + 1) + ' of ' + order.length);
@@ -646,7 +683,7 @@
     el('btnSubmit').disabled = false;
     if (!find) el('answerInput').focus();
 
-    el('plate').alt = 'Sheep brain ' + state.data.label.toLowerCase()
+    el('plate').alt = 'Sheep brain ' + viewLabel(s).toLowerCase()
       + (describe ? ' section, unmarked.' : find ? ' section. Tap the location of the named structure.' : ' section with one structure marked by a pulsing dot');
 
     startTimer();
@@ -739,7 +776,7 @@
     var tapped = !timedOut && fx != null;
     var nearest = null, nd = Infinity, dTarget = Infinity, ok = false, hit = false;
     if (tapped) {
-      state.allowed.forEach(function (c) { var d = dist(c); if (d < nd) { nd = d; nearest = c; } });
+      viewAllowed(s).forEach(function (c) { var d = dist(c); if (d < nd) { nd = d; nearest = c; } });
       dTarget = dist(s);
       ok = dTarget <= FIND_R0 || (nearest === s && dTarget <= FIND_R);
       hit = !ok && nearest && nearest !== s && nd <= FIND_R;
@@ -804,9 +841,24 @@
     show('results');
   }
 
+  /* Question order. One view at a time by default (views in random order,
+     structures shuffled within each), or fully shuffled across views. */
+  function orderFor(pool) {
+    var mix = el('mixViews').checked || state.views.length < 2;
+    if (mix) return shuffle(pool.length);
+    var byView = {}, ids = [];
+    pool.forEach(function (s, i) { if (!byView[s._view]) { byView[s._view] = []; ids.push(s._view); } byView[s._view].push(i); });
+    var out = [];
+    shuffle(ids.length).forEach(function (k) {
+      var idx = byView[ids[k]];
+      shuffle(idx.length).forEach(function (j) { out.push(idx[j]); });
+    });
+    return out;
+  }
+
   function run(pool) {
     state.pool = pool;
-    state.order = shuffle(pool.length);
+    state.order = orderFor(pool);
     state.at = 0; state.score = 0; state.missed = [];
     show('quiz');
     syncPlateWidth();
@@ -915,63 +967,112 @@
   }
 
   /* The pool for a run: every allowed structure, except that Describe it
-     needs a definition to show and skips any structure without one. */
-  function poolFor(mode) {
+     needs a definition to show and skips any structure without one. "How
+     many" takes a random sample of that. */
+  function basePool(mode) {
     var all = state.allowed || [];
     return mode === 'describe' ? all.filter(function (s) { return s.about; }) : all.slice();
   }
-  function paintCount() {
-    var n = poolFor(state.mode).length;
-    el('startCount').textContent = n;
-    el('btnBegin').disabled = n === 0;
+  function poolFor(mode) {
+    var pool = basePool(mode);
+    var n = +el('countSel').value || 0;
+    if (n && n < pool.length) pool = shuffle(pool.length).slice(0, n).map(function (i) { return pool[i]; });
+    return pool;
   }
+  function paintCount() {
+    var base = basePool(state.mode), n = +el('countSel').value || 0;
+    var sampled = n && n < base.length;
+    el('startCount').textContent = sampled ? n : base.length;
+    el('countNote').textContent = sampled ? ' of ' + base.length + ' structures, at random' : ' structures in this set';
+    el('btnBegin').disabled = base.length === 0;
+  }
+  var countSel = el('countSel'), mixViews = el('mixViews');
+  var savedCount = store.get('oo.quiz.count');
+  if (savedCount !== null) { countSel.value = savedCount; if (countSel.value !== savedCount) countSel.value = '0'; }
+  countSel.addEventListener('change', function () { store.set('oo.quiz.count', countSel.value); paintCount(); });
+  mixViews.checked = store.get('oo.quiz.mix') === '1';
+  mixViews.addEventListener('change', function () { store.set('oo.quiz.mix', mixViews.checked ? '1' : '0'); });
   paintMode();
 
-  // Going back to the index must not drop the instructor's selection.
-  (function () {
-    var p = new URLSearchParams(window.location.search);
-    p.delete('view');
-    var qs = p.toString();
-    var home = el('homeLink');
-    if (home) home.href = 'index.html' + (qs ? '?' + qs : '');
-  })();
+  /* ---------- which structures: a set of views, one view, or the chooser ---------- */
+  var V = window.OPENOVIS_VIEWS;
+  var params = new URLSearchParams(window.location.search);
+  var VIEW = params.get('view'), SET = params.get('set');
+  if (SET && SET !== 'all' && !V.group(SET)) SET = null;
+  el('homeLink').href = V.link('index.html', {});   // keeps the instructor's selection
 
   function openAtlas() {
-    var params = new URLSearchParams(window.location.search);
-    params.set('view', VIEW);
-    window.location.href = 'atlas.html?' + params.toString();
+    window.location.href = VIEW ? V.link('atlas.html', { view: VIEW })
+      : V.link('atlas.html', { group: SET && SET !== 'all' ? SET : '' });
   }
   el('atlasLink').addEventListener('click', openAtlas);
   el('btnAtlas2').addEventListener('click', openAtlas);
 
-  /* ---------- boot ---------- */
-  var VIEW = new URLSearchParams(window.location.search).get('view') || 'midsagittal';
+  function loadViews(ids) {
+    return Promise.all(ids.map(function (id) {
+      return fetch('data/' + id + '.json').then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + id);
+        return r.json();
+      });
+    }));
+  }
 
-  fetch('data/' + VIEW + '.json')
-    .then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function (data) {
-      state.data = data;
+  var ids = VIEW ? [VIEW] : SET ? (SET === 'all' ? V.all.slice() : V.group(SET).views.slice()) : null;
+  if (!ids) {
+    // No set asked for: the chooser, with counts that honor the instructor's link.
+    el('screenStart').hidden = true;
+    el('screenChoose').hidden = false;
+    document.title = 'Open Ovis \u2014 Quiz';
+    el('viewName').textContent = 'Choose a set';
+    loadViews(V.all).then(function (datas) {
+      var ex = excludedFlags(), count = {};
+      datas.forEach(function (d) { count[d.view] = d.structures.filter(function (s) { return !ex[s.flag]; }).length; });
+      var sum = function (vs) { return vs.reduce(function (a, v) { return a + (count[v] || 0); }, 0); };
+      var sets = V.groups.map(function (g) { return { id: g.id, label: g.label, blurb: g.blurb, n: sum(g.views), views: g.views.length }; });
+      sets.push({ id: 'all', label: 'Everything', blurb: 'All twelve views in one run.', n: sum(V.all), views: V.all.length });
+      var host = el('setCards');
+      sets.forEach(function (s) {
+        var a = document.createElement('a');
+        a.className = 'set';
+        a.href = V.link('quiz.html', { set: s.id });
+        a.innerHTML = '<strong>' + s.label + '</strong><span>' + s.blurb + '</span><em>' + s.n + ' structures \u00b7 '
+          + (s.views === 1 ? '1 view' : s.views + ' views') + '</em>';
+        host.appendChild(a);
+      });
+    }).catch(function (err) {
+      el('screenChoose').querySelector('p').textContent = 'Could not load the structure sets (' + err.message + '). '
+        + 'If you opened this file directly from disk, run a local server instead.';
+    });
+  } else {
+    loadViews(ids).then(function (datas) {
       var ex = excludedFlags();
-      state.allowed = data.structures.filter(function (s) { return !ex[s.flag]; });
+      state.views = datas.map(function (d) {
+        return { id: d.view, data: d, allowed: d.structures
+          .filter(function (s) { return !ex[s.flag]; })
+          .map(function (s) { var c = Object.assign({}, s); c._view = d.view; return c; }) };
+      });
+      state.viewsById = {};
+      state.views.forEach(function (v) { state.viewsById[v.id] = v; });
+      state.allowed = [].concat.apply([], state.views.map(function (v) { return v.allowed; }));
 
-      document.title = 'Open Ovis \u2014 ' + data.label + ' Quiz';
-      el('viewName').textContent = data.label;
-      el('startTitle').textContent = data.label + ' Practicum';
-      el('plate').src = data.image;
+      var label = VIEW ? datas[0].label : SET === 'all' ? 'Full' : V.group(SET).short;
+      document.title = 'Open Ovis \u2014 ' + label + ' Quiz';
+      el('viewName').textContent = label;
+      el('startTitle').textContent = label + ' Practicum';
+      el('mixWrap').hidden = state.views.length < 2;
+      el('plate').src = state.views[0].data.image;
+      el('plate').dataset.view = state.views[0].id;
       el('plate').addEventListener('load', syncPlateWidth);
       paintCount();
-    })
-    .catch(function (err) {
+    }).catch(function (err) {
       el('startTitle').textContent = 'Could not load the structure set';
       el('screenStart').querySelector('p').textContent =
-        'data/' + VIEW + '.json failed to load (' + err.message + '). ' +
-        'If you opened this file directly from disk, run a local server instead — ' +
-        'browsers block fetch() on file:// URLs.';
+        'A data file failed to load (' + err.message + '). '
+        + 'If you opened this file directly from disk, run a local server instead \u2014 '
+        + 'browsers block fetch() on file:// URLs.';
       el('btnBegin').disabled = true;
     });
+  }
 
   /* ---------- enlarge ---------- */
   (function () {

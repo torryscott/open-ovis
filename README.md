@@ -65,6 +65,10 @@ That's the minimum. The survey works immediately; everything below is customizat
 
 ---
 
+The home page is a hero and two buttons. **Open the atlas** goes to a chooser (`atlas.html` with no view): Surface views, Midsagittal, or Coronal sections, or any single view from the grid below them. Inside a group the atlas shows a tab strip to its sibling views, and every atlas page has a **Quiz this view** link. **Take the quiz** goes to its own chooser (`quiz.html` with no view): the same three groups plus Everything. `quiz.html?set=surface` (or `coronal`, `midsagittal`, `all`) runs the structures of every view in that group; `quiz.html?view=dorsal` still runs a single view. The groups are defined once in `views.js`.
+
+A group run goes one view at a time by default, views in random order and structures shuffled within each, with a **Shuffle across views** option for the full exam feel. **How many** takes all of the structures or a random 25 or 10. The instructor's `?off=` selection carries through every chooser, tab, and link.
+
 The quiz has three modes, chosen on its start screen. **Name it** marks a structure with a pulsing dot and asks for its name. **Find it** gives the name and asks the student to tap the structure; a tap counts if it lands within a small radius of the target, or within a larger one while still being closer to the target than to any other structure. **Describe it** shows the structure's definition and asks for its name, so it needs no image and is the accessible equivalent of the other two. `quiz.html?view=dorsal&mode=find` (or `mode=describe`) opens a view straight into that mode. The start screen also sets the time per question (1, 3, or 10 minutes, or no limit) and can hold the marker still; both are remembered on the device.
 
 The atlas has a **List view** button that shows every visible structure with its tissue type and definition as text below the figure. Every page has a skip link and landmarks, the study-mode and quiz-mode groups take arrow keys, and Escape dismisses an atlas definition. The home page carries an accessibility statement; the target is WCAG 2.1 AA.

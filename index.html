@@ -283,7 +283,8 @@
   <header class="topbar">
     <a class="wordmark" href="index.html"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18V5" /><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" /><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" /><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" /><path d="M18 18a4 4 0 0 0 2-7.464" /><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" /><path d="M6 18a4 4 0 0 1-2-7.464" /><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" /></g></svg><span>Open Ovis<i>.</i></span></a>
     <nav aria-label="Site">
-      <a href="#views">Views</a>
+      <a href="atlas.html" id="navAtlas">Atlas</a>
+      <a href="quiz.html" id="navQuiz">Quiz</a>
       <a href="tools/link-builder.html">For instructors</a>
       <a href="https://github.com/torryscott/open-ovis">Source</a>
     </nav>
@@ -301,11 +302,11 @@
       <p class="lede">An interactive atlas of a dissected sheep brain, and a quiz that
          tests you on the same structures.</p>
       <div class="cta">
-        <a class="btn primary" id="ctaAtlas" href="atlas.html?view=midsagittal">
+        <a class="btn primary" id="ctaAtlas" href="atlas.html">
           Open the atlas
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
         </a>
-        <a class="btn" id="ctaQuiz" href="quiz.html?view=midsagittal">Take the quiz</a>
+        <a class="btn" id="ctaQuiz" href="quiz.html">Take the quiz</a>
       </div>
     </div>
 
@@ -329,19 +330,6 @@
         <span class="pill" style="left:94.34%;top:35.17%" aria-hidden="true">Cerebellum</span>
       </div>
     </figure>
-  </section>
-
-  <section class="choose" id="views">
-    <div class="choose-head">
-      <h2>Choose a view</h2>
-      <span class="progress" aria-label="Views mapped so far">
-        <span id="progText">— of 12 mapped</span>
-        <span class="bar"><i id="progBar"></i></span>
-      </span>
-    </div>
-    <p class="sub">Each view has its own atlas and quiz. Surface views show the intact brain;
-       sectioned views show cut surfaces.</p>
-    <div id="groups"></div>
   </section>
 
   <section class="a11y" id="accessibility">
@@ -387,141 +375,22 @@
 
 <script>
 (function () {
-  'use strict';
+  /* The hero buttons and the nav carry the instructor's ?off= selection to
+     the atlas and quiz choosers. */
+  var p = new URLSearchParams(window.location.search);
+  p.delete('view'); p.delete('group'); p.delete('set');
+  var qs = p.toString() ? '?' + p.toString() : '';
+  ['ctaAtlas', 'navAtlas'].forEach(function (id) { var a = document.getElementById(id); if (a) a.href = 'atlas.html' + qs; });
+  ['ctaQuiz', 'navQuiz'].forEach(function (id) { var a = document.getElementById(id); if (a) a.href = 'quiz.html' + qs; });
 
-  /* A view is live as soon as data/<id>.json exists. Nothing else to edit. */
-  var GROUPS = [
-    { title: 'Surface views', blurb: 'the intact brain from the outside',
-      views: [
-        { id: 'dorsal',              label: 'Dorsal' },
-        { id: 'lateral',             label: 'Lateral' },
-        { id: 'ventral',             label: 'Ventral' },
-        { id: 'posterior-internal',  label: 'Posterior' },
-        { id: 'pulled-back-lateral', label: 'Lateral, retracted' }
-      ] },
-    { title: 'Sectioned views', blurb: 'cut surfaces; coronal runs rostral to caudal',
-      views: [
-        { id: 'midsagittal', label: 'Midsagittal' },
-        { id: 'coronal-a',   label: 'Coronal A' },
-        { id: 'coronal-b',   label: 'Coronal B' },
-        { id: 'coronal-c',   label: 'Coronal C' },
-        { id: 'coronal-d',   label: 'Coronal D' },
-        { id: 'coronal-e',   label: 'Coronal E' },
-        { id: 'coronal-f',   label: 'Coronal F' }
-      ] }
-  ];
-
-  var search = new URLSearchParams(window.location.search);
-  var excluded = OPENOVIS.excludedMap();   // honors ?off= and the long form
-  var excludedCount = Object.keys(excluded).length;
-
-  function linkFor(page, id) {
-    var p = new URLSearchParams(window.location.search);
-    p.set('view', id);
-    return page + '?' + p.toString();
+  var excludedCount = Object.keys(OPENOVIS.excludedMap()).length;   // honors ?off= and the long form
+  if (excludedCount) {
+    document.getElementById('filterText').innerHTML =
+      '<b>This link is customized.</b> Your instructor has narrowed the set: '
+      + excludedCount + ' structure' + (excludedCount === 1 ? '' : 's')
+      + ' excluded. The atlas and quiz show what you will actually see.';
+    document.getElementById('filterNotice').hidden = false;
   }
-
-  /* Hero CTAs carry the instructor's flags too. */
-  document.getElementById('ctaAtlas').href = linkFor('atlas.html', 'midsagittal');
-  document.getElementById('ctaQuiz').href  = linkFor('quiz.html',  'midsagittal');
-
-  function el(tag, cls, text) {
-    var n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text != null) n.textContent = text;
-    return n;
-  }
-
-  function card(view, data) {
-    var c = el('article', 'card');
-
-    var thumb = el('div', 'thumb');
-    var img = document.createElement('img');
-    img.src = 'images/thumbs/' + view.id + '.jpg';
-    img.onerror = function () { img.onerror = null; img.src = data.image; };   // fall back to the full plate
-    img.alt = '';
-    img.loading = 'lazy';
-    thumb.appendChild(img);
-    c.appendChild(thumb);
-
-    var body = el('div', 'body');
-    var row = el('div', 'row');
-    row.appendChild(el('h4', null, view.label));
-
-    var total = data.structures.length;
-    var shown = data.structures.filter(function (s) { return !excluded[s.flag]; }).length;
-    var count = el('span', 'count');
-    count.innerHTML = shown === total
-      ? '<b>' + total + '</b> structures'
-      : '<b>' + shown + '</b> of ' + total;
-    row.appendChild(count);
-    body.appendChild(row);
-
-    var acts = el('div', 'acts');
-    var a1 = el('a', null, 'Atlas');
-    a1.href = linkFor('atlas.html', view.id);
-    a1.setAttribute('aria-label', 'Open the ' + view.label + ' atlas');
-    var a2 = el('a', 'primary', 'Quiz');
-    a2.href = linkFor('quiz.html', view.id);
-    a2.setAttribute('aria-label', 'Start the ' + view.label + ' quiz');
-    acts.appendChild(a1); acts.appendChild(a2);
-    body.appendChild(acts);
-    c.appendChild(body);
-    return c;
-  }
-
-  function loadView(v) {
-    return fetch('data/' + v.id + '.json')
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .catch(function () { return null; });
-  }
-
-  var all = [];
-  GROUPS.forEach(function (g) { g.views.forEach(function (v) { all.push(v); }); });
-
-  Promise.all(all.map(loadView)).then(function (loaded) {
-    var byId = {};
-    all.forEach(function (v, i) { byId[v.id] = loaded[i]; });
-
-    var host = document.getElementById('groups');
-    GROUPS.forEach(function (g) {
-      var sec = el('section', 'group');
-      var head = el('div', 'group-head');
-      head.appendChild(el('h3', null, g.title));
-      head.appendChild(el('span', null, g.blurb));
-      sec.appendChild(head);
-
-      var live = g.views.filter(function (v) { return byId[v.id]; });
-      var pend = g.views.filter(function (v) { return !byId[v.id]; });
-
-      if (live.length) {
-        var grid = el('div', 'cards');
-        live.forEach(function (v) { grid.appendChild(card(v, byId[v.id])); });
-        sec.appendChild(grid);
-      }
-      if (pend.length) {
-        var p = el('div', 'pending');
-        p.appendChild(el('b', null, live.length ? 'Coming' : 'In progress'));
-        p.appendChild(el('span', 'list', pend.map(function (v) { return v.label; }).join(' · ')));
-        sec.appendChild(p);
-      }
-      host.appendChild(sec);
-    });
-
-    var ready = loaded.filter(Boolean).length;
-    document.getElementById('progText').textContent = ready + ' of ' + all.length + ' mapped';
-    document.getElementById('progBar').style.width = (ready / all.length * 100) + '%';
-    document.getElementById('srStatus').textContent = ready + ' of ' + all.length + ' views available.';
-
-
-    if (excludedCount) {
-      document.getElementById('filterText').innerHTML =
-        '<b>This link is customized.</b> Your instructor has narrowed the set — '
-        + excludedCount + ' structure' + (excludedCount === 1 ? '' : 's')
-        + ' excluded. Counts below reflect what you will actually see.';
-      document.getElementById('filterNotice').hidden = false;
-    }
-  });
 })();
 </script>
 </body>
