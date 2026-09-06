@@ -443,17 +443,20 @@
     .views { gap: 14px; }
     .actions-row button { flex: 1 1 auto; }
   }
+  .skip { position: absolute; left: -999px; top: 8px; z-index: 100; padding: 8px 12px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; text-decoration: none; }
+  .skip:focus { left: 8px; outline: 3px solid #fff; outline-offset: 2px; }
 </style>
 <script src="../codes.js"></script>
 </head>
 <body>
-<section class="hero">
+<a class="skip" href="#main">Skip to content</a>
+<header class="hero">
   <div class="hero-eyebrow">Open Ovis · For instructors</div>
   <h1>Assignment Link Builder</h1>
   <p>Choose which brain areas your students should be tested on. Unselected areas are skipped for that assignment; leave everything selected to use the full module.</p>
-</section>
+</header>
 
-<main>
+<main id="main">
   <section class="card url-card">
     <div class="base-row">
       <label class="field-label" for="baseUrl">Base URL</label>

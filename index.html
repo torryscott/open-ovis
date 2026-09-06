@@ -162,6 +162,13 @@
 
   /* ---------- choose a view ---------- */
   .choose { padding: 14px 0 0; }
+  .a11y { padding: 34px 0 6px; max-width: 72ch; }
+  .a11y h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 1.35rem; margin: 0 0 10px; }
+  .a11y p { margin: 0 0 10px; color: var(--ink-soft); line-height: 1.55; }
+  .a11y abbr { text-decoration: none; }
+  .skip { position: absolute; left: -999px; top: 8px; z-index: 100; padding: 8px 12px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; text-decoration: none; }
+  .skip:focus { left: 8px; outline: 3px solid #fff; outline-offset: 2px; }
+
   .choose-head {
     display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;
     border-top: 1px solid var(--rule); padding-top: 30px; margin-bottom: 8px;
@@ -235,7 +242,7 @@
     color: var(--ink-2); font-size: .92rem;
   }
   footer .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; }
-  footer h5 {
+  footer h2 {
     font-family: var(--mono); font-size: .72rem; letter-spacing: .13em; text-transform: uppercase;
     color: var(--muted); font-weight: 500; margin: 0 0 8px;
   }
@@ -269,6 +276,7 @@
 <script src="codes.js"></script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <div class="container">
 
@@ -281,6 +289,7 @@
     </nav>
   </header>
 
+  <main id="main">
   <div class="notice" id="filterNotice" hidden>
     <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>
     <span id="filterText"></span>
@@ -335,18 +344,36 @@
     <div id="groups"></div>
   </section>
 
+  <section class="a11y" id="accessibility">
+    <h2>Accessibility</h2>
+    <p>Open Ovis is built to meet <abbr title="Web Content Accessibility Guidelines">WCAG</abbr> 2.1
+       Level AA, the standard that ADA Title II sets for public colleges. Every page works with a
+       keyboard alone and with a screen reader. In the atlas, each marker is a button that reads its
+       structure's name and definition, and <strong>List view</strong> shows the whole figure as text.
+       In the quiz, the time limit can be lengthened or turned off, the marker can be held still, and
+       all feedback is given in words, not color alone.</p>
+    <p>Two quiz modes, <strong>Name it</strong> and <strong>Find it</strong>, ask you to locate a
+       structure on a photograph, which is a visual task by nature. <strong>Describe it</strong> covers
+       the same structures from their definitions and needs no image.</p>
+    <p>If something does not work for you, tell your instructor or
+       <a href="https://github.com/torryscott/open-ovis/issues">open an issue on GitHub</a>.</p>
+  </section>
+  </main>
+
   <footer>
     <div class="cols">
       <div>
-        <h5>For instructors</h5>
+        <h2>For instructors</h2>
         <p>The <a href="tools/link-builder.html">link builder</a> makes a student link that
            covers exactly the structures you assign. Every page here honors it.</p>
       </div>
       <div>
-        <h5>The name</h5>
+        <h2>Accessibility</h2>
+        <p>Built to WCAG 2.1 AA. Keyboard, screen reader, adjustable timer, and a text view of every
+           figure. <a href="#accessibility">Read the statement.</a></p>
       </div>
       <div>
-        <h5>Open source</h5>
+        <h2>Open source</h2>
         <p>Code under MIT. Specimen photographs CC BY 4.0.
            <a href="https://github.com/torryscott/open-ovis">github.com/torryscott/open-ovis</a></p>
       </div>

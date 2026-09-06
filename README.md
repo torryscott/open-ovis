@@ -65,7 +65,9 @@ That's the minimum. The survey works immediately; everything below is customizat
 
 ---
 
-The quiz has two modes, chosen on its start screen. **Name it** marks a structure with an X and asks for its name. **Find it** gives the name and asks the student to tap the structure; a tap counts if it lands within a small radius of the target, or within a larger one while still being closer to the target than to any other structure. `quiz.html?view=dorsal&mode=find` opens a view straight into find mode.
+The quiz has three modes, chosen on its start screen. **Name it** marks a structure with an X and asks for its name. **Find it** gives the name and asks the student to tap the structure; a tap counts if it lands within a small radius of the target, or within a larger one while still being closer to the target than to any other structure. **Describe it** shows the structure's definition and asks for its name, so it needs no image and is the accessible equivalent of the other two. `quiz.html?view=dorsal&mode=find` (or `mode=describe`) opens a view straight into that mode. The start screen also sets the time per question (1, 3, or 10 minutes, or no limit) and can hold the X marker still; both are remembered on the device.
+
+The atlas has a **List view** button that shows every visible structure with its tissue type and definition as text below the figure. Every page has a skip link and landmarks, the study-mode and quiz-mode groups take arrow keys, and Escape dismisses an atlas definition. The home page carries an accessibility statement; the target is WCAG 2.1 AA.
 
 A structure may also carry a `zone`: a list of `[x, y]` fractions outlining the region a Find it tap should count for, traced with the capture tool's Draw zone button. Structures without a zone are graded by distance to their marker.
 

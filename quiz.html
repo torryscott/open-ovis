@@ -282,7 +282,7 @@
   @media (hover: hover) and (pointer: fine) { .zoom-hint { display: none; } }
 
   /* ---------- quiz mode chooser ---------- */
-  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 540px; margin: 14px auto 18px; text-align: left; }
+  .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 760px; margin: 14px auto 14px; text-align: left; }
   .mode {
     font: inherit; text-align: left; padding: 12px 14px; border-radius: 12px; cursor: pointer;
     border: 1.5px solid var(--rule-strong); background: var(--panel); color: var(--ink);
@@ -291,7 +291,21 @@
   .mode span { display: block; font-size: .85rem; color: var(--muted); line-height: 1.35; }
   .mode.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .mode:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  @media (max-width: 480px) { .modes { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .modes { grid-template-columns: 1fr; } }
+
+  /* start-screen options: time limit and a still marker */
+  .options { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 18px; margin: 0 auto 16px; font-size: .92rem; color: var(--ink-soft); }
+  .options select { font: inherit; padding: 6px 10px; border: 1.5px solid var(--rule-strong); border-radius: 8px; background: var(--panel); color: var(--ink); }
+  .options select:focus-visible, .options input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .options .check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .options .check span { color: var(--muted); }
+  .still .xmark { animation: none; }
+
+  /* describe-it: the definition stands in for the marked photo */
+  .describe { margin: 6px 0 10px; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; color: var(--ink); line-height: 1.5; font-size: 1.02rem; }
+
+  .skip { position: absolute; left: -999px; top: 8px; z-index: 100; padding: 8px 12px; background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; }
+  .skip:focus { left: 8px; outline: 3px solid #fff; outline-offset: 2px; }
 
   /* ---------- find it: tap targets, tap mark ---------- */
   #plate.findable { cursor: crosshair; }
@@ -310,6 +324,7 @@
 <script src="codes.js"></script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <header class="top">
   <div class="brand">Open Ovis<span>.</span></div>
@@ -319,19 +334,32 @@
   <a class="homelink" id="homeLink" href="index.html">All views</a>
 </header>
 
-<div class="wrap">
+<main class="wrap" id="main">
 
   <!-- ============ START ============ -->
   <section class="card start" id="screenStart">
     <h1 id="startTitle">Midsagittal Practicum</h1>
     <p id="startBlurb">Choose how you want to be tested. Order is randomized each time.</p>
     <div class="modes" role="radiogroup" aria-label="Quiz mode">
-      <button type="button" class="mode active" data-mode="name" role="radio" aria-checked="true">
-        <strong>Name it</strong><span>An X marks a structure. You type its name.</span>
+      <button type="button" class="mode active" data-mode="name" role="radio" aria-checked="true" tabindex="0">
+        <strong>Name it</strong><span>An X marks a structure on the photo. You type its name.</span>
       </button>
-      <button type="button" class="mode" data-mode="find" role="radio" aria-checked="false">
-        <strong>Find it</strong><span>You are given a name. You tap where it is.</span>
+      <button type="button" class="mode" data-mode="find" role="radio" aria-checked="false" tabindex="-1">
+        <strong>Find it</strong><span>You are given a name. You tap where it is on the photo.</span>
       </button>
+      <button type="button" class="mode" data-mode="describe" role="radio" aria-checked="false" tabindex="-1">
+        <strong>Describe it</strong><span>You read the definition. You type its name. No image needed.</span>
+      </button>
+    </div>
+    <div class="options">
+      <label for="timerSel">Time per question</label>
+      <select id="timerSel">
+        <option value="60">1 minute</option>
+        <option value="180">3 minutes</option>
+        <option value="600">10 minutes</option>
+        <option value="0">No limit</option>
+      </select>
+      <label class="check"><input type="checkbox" id="stillX"> Still marker <span>(no pulsing)</span></label>
     </div>
     <div class="count"><strong id="startCount">0</strong> structures in this set</div>
     <div class="actions">
@@ -361,6 +389,8 @@
     <div class="card answer" id="panelAsk">
       <p class="prompt" id="promptName">Identify the structure marked by the <strong>X</strong>.</p>
       <p class="prompt" id="promptFind" hidden>Find the <strong id="findName"></strong>.</p>
+      <p class="prompt" id="promptDescribe" hidden>Which structure is this?</p>
+      <blockquote class="describe" id="describeText" hidden></blockquote>
       <p class="matter">This is <b id="matterHint">—</b></p>
       <p class="matter" id="findHelp" hidden>Tap its location on the image. Enlarge gives a closer look.</p>
       <form class="answer-row" id="answerForm" autocomplete="off">
@@ -408,7 +438,7 @@
   </section>
 
   <p class="sr-only" role="status" aria-live="polite" id="srStatus"></p>
-</div>
+</main>
 
 <footer class="foot">Open Ovis · sheep brain study guide</footer>
 
@@ -427,7 +457,7 @@
 (function () {
   'use strict';
 
-  var QUESTION_SECONDS = 60;
+  var QUESTION_SECONDS = 60;      // default; the start screen can change it or turn it off
 
   var el = function (id) { return document.getElementById(id); };
   var state = {
@@ -439,7 +469,9 @@
     missed: [],
     answered: false,
     tick: null,
-    remaining: QUESTION_SECONDS
+    remaining: QUESTION_SECONDS,
+    limit: QUESTION_SECONDS,         // seconds per question; 0 means no limit
+    mode: 'name'
   };
 
   /* ---------- flag filtering, same convention as the atlas ---------- */
@@ -530,8 +562,9 @@
   function stopTimer() { if (state.tick) { clearInterval(state.tick); state.tick = null; } }
   function startTimer() {
     stopTimer();
-    state.remaining = QUESTION_SECONDS;
+    state.remaining = state.limit;
     paintTimer();
+    if (!state.limit) return;        // no limit: nothing to count down
     state.tick = setInterval(function () {
       state.remaining--;
       paintTimer();
@@ -539,9 +572,10 @@
     }, 1000);
   }
   function paintTimer() {
+    var t = el('timer');
+    if (!state.limit) { t.textContent = 'No limit'; t.classList.remove('low'); return; }
     var m = Math.floor(Math.max(state.remaining, 0) / 60);
     var s = Math.max(state.remaining, 0) % 60;
-    var t = el('timer');
     t.textContent = m + ':' + (s < 10 ? '0' : '') + s;
     t.classList.toggle('low', state.remaining <= 10);
   }
@@ -556,11 +590,13 @@
 
   function renderQuestion() {
     var s = current();
-    var find = state.mode === 'find';
+    var find = state.mode === 'find', describe = state.mode === 'describe';
     state.answered = false;
     clearOverlays();
 
-    if (!find) {
+    if (describe) {
+      // nothing on the plate: the definition is the question
+    } else if (!find) {
       var x = document.createElement('div');
       x.className = 'xmark';
       x.style.left = (s.target.x * 100) + '%';
@@ -589,8 +625,11 @@
     el('trackFill').style.width = ((state.at) / state.pool.length * 100) + '%';
     el('matterHint').textContent = s.matter || 'part of the specimen';
 
-    el('promptName').hidden = find;
+    el('promptName').hidden = find || describe;
     el('promptFind').hidden = !find;
+    el('promptDescribe').hidden = !describe;
+    el('describeText').hidden = !describe;
+    el('describeText').textContent = describe ? (s.about || '') : '';
     el('findHelp').hidden = !find;
     el('findName').textContent = s.name;
     el('answerInput').hidden = find;
@@ -605,7 +644,7 @@
     if (!find) el('answerInput').focus();
 
     el('plate').alt = 'Sheep brain ' + state.data.label.toLowerCase()
-      + (find ? ' section. Tap the location of the named structure.' : ' section with one structure marked by an X');
+      + (describe ? ' section, unmarked.' : find ? ' section. Tap the location of the named structure.' : ' section with one structure marked by an X');
 
     startTimer();
   }
@@ -793,7 +832,7 @@
     state.missed.forEach(function (m) { names[m.name] = true; });
     run(state.pool.filter(function (s) { return names[s.name]; }));
   });
-  el('btnBegin').addEventListener('click', function () { run(state.allowed.slice()); });
+  el('btnBegin').addEventListener('click', function () { run(poolFor(state.mode)); });
 
   // Find it: a tap on the plate is the answer.
   el('plate').addEventListener('click', function (e) {
@@ -805,17 +844,62 @@
   });
 
   // Mode: chosen on the start screen; ?mode=find preselects it for a shared link.
-  state.mode = new URLSearchParams(window.location.search).get('mode') === 'find' ? 'find' : 'name';
+  var MODES = ['name', 'find', 'describe'];
+  var urlMode = new URLSearchParams(window.location.search).get('mode');
+  state.mode = MODES.indexOf(urlMode) > -1 ? urlMode : 'name';
   function paintMode() {
     document.querySelectorAll('.mode').forEach(function (b) {
       var on = b.dataset.mode === state.mode;
       b.classList.toggle('active', on);
       b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;          // one tab stop for the group; arrows move within it
     });
+    paintCount();
+  }
+  function setMode(m, focus) {
+    state.mode = m; paintMode();
+    if (focus) { var b = document.querySelector('.mode[data-mode="' + m + '"]'); if (b) b.focus(); }
   }
   document.querySelectorAll('.mode').forEach(function (b) {
-    b.addEventListener('click', function () { state.mode = b.dataset.mode; paintMode(); });
+    b.addEventListener('click', function () { setMode(b.dataset.mode, false); });
   });
+  // Arrow keys move the choice, as a screen reader tells its user a radio group does.
+  document.querySelector('.modes').addEventListener('keydown', function (e) {
+    var i = MODES.indexOf(state.mode), n = MODES.length;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); setMode(MODES[(i + 1) % n], true); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); setMode(MODES[(i - 1 + n) % n], true); }
+    else if (e.key === 'Home') { e.preventDefault(); setMode(MODES[0], true); }
+    else if (e.key === 'End') { e.preventDefault(); setMode(MODES[n - 1], true); }
+  });
+
+  /* Options, remembered on this device. The time limit can be turned off
+     outright, which is what an accessibility review looks for first. */
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
+  };
+  var timerSel = el('timerSel'), stillX = el('stillX');
+  var savedLimit = store.get('oo.quiz.limit');
+  if (savedLimit !== null && !isNaN(+savedLimit)) state.limit = +savedLimit;
+  timerSel.value = String(state.limit);
+  if (timerSel.value !== String(state.limit)) { timerSel.value = '60'; state.limit = 60; }
+  timerSel.addEventListener('change', function () { state.limit = +timerSel.value; store.set('oo.quiz.limit', timerSel.value); });
+  var still = store.get('oo.quiz.still') === '1';
+  stillX.checked = still;
+  document.body.classList.toggle('still', still);
+  stillX.addEventListener('change', function () { document.body.classList.toggle('still', stillX.checked); store.set('oo.quiz.still', stillX.checked ? '1' : '0'); });
+
+  /* The pool for a run: every allowed structure, except that Describe it
+     needs a definition to show and skips any structure without one. */
+  function poolFor(mode) {
+    var all = state.allowed || [];
+    return mode === 'describe' ? all.filter(function (s) { return s.about; }) : all.slice();
+  }
+  function paintCount() {
+    var n = poolFor(state.mode).length;
+    el('startCount').textContent = n;
+    el('btnBegin').disabled = n === 0;
+  }
   paintMode();
 
   // Going back to the index must not drop the instructor's selection.
@@ -851,13 +935,9 @@
       document.title = 'Open Ovis \u2014 ' + data.label + ' Quiz';
       el('viewName').textContent = data.label;
       el('startTitle').textContent = data.label + ' Practicum';
-      el('startCount').textContent = state.allowed.length;
       el('plate').src = data.image;
       el('plate').addEventListener('load', syncPlateWidth);
-      el('btnBegin').disabled = state.allowed.length === 0;
-      if (!state.allowed.length) {
-        el('startCount').textContent = '0';
-      }
+      paintCount();
     })
     .catch(function (err) {
       el('startTitle').textContent = 'Could not load the structure set';
