@@ -199,7 +199,14 @@
     transition: transform 0.15s;
     padding: 0;
   }
-  .marker:hover,
+  /* Hover enlargement only where hovering exists. On a touchscreen a tap
+     leaves a sticky :hover on whichever element was under the finger, which
+     is the dot whose hit box was on top rather than the nearest one, so it
+     would enlarge a second, wrong dot beside the picked one. */
+  @media (hover: hover) {
+    .marker:hover { transform: translate(-50%, -50%) scale(1.4); cursor: pointer; }
+  }
+  .marker { -webkit-tap-highlight-color: transparent; }
   .marker:focus-visible { transform: translate(-50%, -50%) scale(1.4); cursor: pointer; }
 
   /* Invisible hit area so the dot is tappable without making it look bigger.
@@ -208,7 +215,7 @@
     content: "";
     position: absolute;
     left: 50%; top: 50%;
-    width: 44px; height: 44px;
+    width: 24px; height: 24px;
     transform: translate(-50%, -50%);
   }
   @media (hover: hover) and (pointer: fine) {
@@ -274,8 +281,10 @@
   .stage.mode-hover svg.leaders line { stroke-width: clamp(1.25px, calc(var(--iw, 1000px) * 0.00175), 2.5px); }
   .stage.mode-hover .label-pill { opacity: 0; pointer-events: none; }
   .stage.mode-hover svg.leaders line { opacity: 0; }
-  .stage.mode-hover .marker.hovered,
-  .stage.mode-hover .marker:hover { transform: translate(-50%, -50%) scale(1.4); }
+  .stage.mode-hover .marker.hovered { transform: translate(-50%, -50%) scale(1.4); }
+  @media (hover: hover) {
+    .stage.mode-hover .marker:hover { transform: translate(-50%, -50%) scale(1.4); }
+  }
   .stage.mode-hover .label-pill.hovered {
     opacity: 1;
     background: var(--accent);
@@ -521,8 +530,13 @@ function buildFigure(container, visible) {
       pill.addEventListener('mouseleave', () => { if (pinned !== entry) leave(); });
     }
 
-    // Keyboard.
-    dot.addEventListener('focus', enter);
+    // Keyboard. Focus that came from a tap (Android focuses a tapped button)
+    // is ignored: the tap itself is resolved by distance below.
+    dot.addEventListener('focus', () => {
+      let keyboard = true;
+      try { keyboard = dot.matches(':focus-visible'); } catch (_) {}
+      if (keyboard) enter();
+    });
     dot.addEventListener('blur', () => { if (pinned !== entry) leave(); });
 
     // Keyboard activation (Enter or Space on the focused dot). Pointer taps
