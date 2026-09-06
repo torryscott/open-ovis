@@ -12,7 +12,7 @@
   :root {
     --bg: #f4f6f9; --panel: #fff; --ink: #1a1d29; --ink-soft: #3c4050; --muted: #666d7a;
     --accent: #1e3a5f; --accent-soft: #e8eef5; --rule: #e3e7ee; --rule-strong: #c8cfdb;
-    --marker: #1e3a5f; --cyan: #17a2d9; --amber: #e0b040;
+    --marker: #1e3a5f; --edge: #ffffff; --alt: #17a2d9; --dim: #14181f; --dimA: .38;
     --radius: 14px; --shadow: 0 6px 24px rgba(20,20,30,.08);
   }
   * { box-sizing: border-box; }
@@ -49,6 +49,15 @@
   .controls select, .controls input[type=range] { font: inherit; }
   .controls select { padding: 6px 10px; border: 1.5px solid var(--rule-strong); border-radius: 8px; background: var(--panel); color: var(--ink); }
   .controls :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .colors { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
+  .colors input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid var(--rule-strong); border-radius: 6px; background: none; cursor: pointer; }
+  .colors code { font-size: .78rem; color: var(--muted); }
+  .colors button { font: inherit; font-size: .85rem; padding: 6px 10px; border-radius: 8px; border: 1.5px solid var(--rule-strong); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .colors button:hover { border-color: var(--accent); }
+  .swatches { display: inline-flex; gap: 6px; }
+  .swatches button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--rule-strong); cursor: pointer; }
+  .swatches button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #copied { font-size: .82rem; color: #2f7a3d; }
 
   .stage-wrap { display: flex; justify-content: center; }
   .stage { position: relative; display: inline-block; max-width: 100%; border-radius: 8px; overflow: hidden; }
@@ -69,29 +78,29 @@
 
   /* 1 reticle: ring + arms from outside (the current marker) */
   .v1 { width: var(--R); height: var(--R); border-radius: 50%; border: var(--B) solid var(--marker);
-        box-shadow: 0 0 0 2px rgba(255,255,255,.95), inset 0 0 0 2px rgba(255,255,255,.95); }
+        box-shadow: 0 0 0 2px var(--edge), inset 0 0 0 2px var(--edge); }
   .v1::before, .v1::after { content: ""; position: absolute; left: 50%; top: 50%; width: var(--B); height: calc(var(--R) * 1.9);
         background: linear-gradient(to bottom, var(--marker) 0 22%, transparent 22% 78%, var(--marker) 78% 100%);
-        border-radius: 2px; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px rgba(255,255,255,.9)); }
+        border-radius: 2px; filter: drop-shadow(0 0 1px var(--edge)) drop-shadow(0 0 1px var(--edge)); }
   .v1::before { transform: translate(-50%,-50%) rotate(45deg); }
   .v1::after  { transform: translate(-50%,-50%) rotate(-45deg); }
 
   /* 2 plain ring */
   .v2 { width: calc(var(--R) * 1.15); height: calc(var(--R) * 1.15); border-radius: 50%; border: calc(var(--B) * 1.2) solid var(--marker);
-        box-shadow: 0 0 0 2px rgba(255,255,255,.95), inset 0 0 0 2px rgba(255,255,255,.95); }
+        box-shadow: 0 0 0 2px var(--edge), inset 0 0 0 2px var(--edge); }
 
   /* 3 ring + crosshair ticks (N E S W) */
   .v3 { width: var(--R); height: var(--R); border-radius: 50%; border: var(--B) solid var(--marker);
-        box-shadow: 0 0 0 2px rgba(255,255,255,.95), inset 0 0 0 2px rgba(255,255,255,.95); }
+        box-shadow: 0 0 0 2px var(--edge), inset 0 0 0 2px var(--edge); }
   .v3::before, .v3::after { content: ""; position: absolute; left: 50%; top: 50%; width: var(--B); height: calc(var(--R) * 1.9);
         background: linear-gradient(to bottom, var(--marker) 0 20%, transparent 20% 80%, var(--marker) 80% 100%);
-        border-radius: 2px; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px rgba(255,255,255,.9)); transform: translate(-50%,-50%); }
+        border-radius: 2px; filter: drop-shadow(0 0 1px var(--edge)) drop-shadow(0 0 1px var(--edge)); transform: translate(-50%,-50%); }
   .v3::after { transform: translate(-50%,-50%) rotate(90deg); }
 
   /* 4 bold solid X (covers the centre) */
   .v4 { width: calc(var(--R) * 1.2); height: calc(var(--R) * 1.2); }
   .v4::before, .v4::after { content: ""; position: absolute; left: 50%; top: 0; width: calc(var(--B) * 1.3); height: 100%;
-        background: var(--marker); border-radius: 2px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.95); }
+        background: var(--marker); border-radius: 2px; box-shadow: 0 0 0 1.5px var(--edge); }
   .v4::before { transform: translateX(-50%) rotate(45deg); }
   .v4::after  { transform: translateX(-50%) rotate(-45deg); }
 
@@ -99,13 +108,13 @@
   .v5 { width: calc(var(--R) * 1.6); height: calc(var(--R) * 1.6); }
   .v5::before, .v5::after { content: ""; position: absolute; left: 50%; top: 0; width: calc(var(--B) * 1.4); height: 100%;
         background: linear-gradient(to bottom, var(--marker) 0 32%, transparent 32% 68%, var(--marker) 68% 100%);
-        border-radius: 2px; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px rgba(255,255,255,.9)); }
+        border-radius: 2px; filter: drop-shadow(0 0 1px var(--edge)) drop-shadow(0 0 1px var(--edge)); }
   .v5::before { transform: translateX(-50%) rotate(45deg); }
   .v5::after  { transform: translateX(-50%) rotate(-45deg); }
 
   /* 6 dot with a ping (radiating ring) */
   .v6 { width: calc(var(--R) * .4); height: calc(var(--R) * .4); border-radius: 50%; background: var(--marker);
-        border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+        border: 2px solid var(--edge); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
   .v6::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--R); height: var(--R); border-radius: 50%;
         border: var(--B) solid var(--marker); transform: translate(-50%,-50%); opacity: .9; }
   .animate .v6::before { animation: ping 1.8s ease-out infinite; }
@@ -114,24 +123,26 @@
   /* 7 arrow pointing at the spot from the upper left */
   .v7 { width: calc(var(--R) * 1.7); height: calc(var(--R) * 1.7); transform: translate(-100%, -100%); }
   .v7 svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .v7 .halo { stroke: var(--edge); }
+  .v7 .ink { stroke: var(--marker); }
   .animate .v7.breathes { animation: nudge 1.6s ease-in-out infinite; }
   @keyframes nudge { 0%, 100% { transform: translate(-100%,-100%); } 50% { transform: translate(calc(-100% - 5px), calc(-100% - 5px)); } }
 
   /* 8 focus brackets: four corners of a square */
   .v8 { width: calc(var(--R) * 1.5); height: calc(var(--R) * 1.5); }
-  .v8 i { position: absolute; width: 34%; height: 34%; border: var(--B) solid var(--marker); filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
+  .v8 i { position: absolute; width: 34%; height: 34%; border: var(--B) solid var(--marker); filter: drop-shadow(0 0 1px var(--edge)) drop-shadow(0 0 1px var(--edge)); }
   .v8 i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 3px; }
   .v8 i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 3px; }
   .v8 i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 3px; }
   .v8 i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 3px; }
 
-  /* 9 cyan ring: a hue the tissue never has */
-  .v9 { width: calc(var(--R) * 1.1); height: calc(var(--R) * 1.1); border-radius: 50%; border: calc(var(--B) * 1.2) solid var(--cyan);
-        box-shadow: 0 0 0 2px var(--accent), inset 0 0 0 2px var(--accent); }
+  /* 9 two-tone ring: the alt color edged in the marker color */
+  .v9 { width: calc(var(--R) * 1.1); height: calc(var(--R) * 1.1); border-radius: 50%; border: calc(var(--B) * 1.2) solid var(--alt);
+        box-shadow: 0 0 0 2px var(--marker), inset 0 0 0 2px var(--marker); }
 
   /* 10 spotlight: everything else dims */
   .v10 { width: calc(var(--R) * 1.7); height: calc(var(--R) * 1.7); border-radius: 50%;
-         box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 0 0 9999px rgba(20, 24, 34, .38); }
+         box-shadow: 0 0 0 2px var(--edge), 0 0 0 9999px color-mix(in srgb, var(--dim) calc(var(--dimA) * 100%), transparent); }
 
   footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 0 20px 28px; }
   @media (max-width: 899px) {
@@ -170,6 +181,16 @@
       <label>Size <input type="range" id="sizeRange" min="0.6" max="1.8" step="0.05" value="1" aria-label="Marker size"> <span id="sizeVal">1.0×</span></label>
       <label><input type="checkbox" id="animate" checked> Animate</label>
     </div>
+    <div class="controls colors" role="group" aria-label="Colors">
+      <label>Marker <input type="color" id="cMarker" value="#1e3a5f"> <code id="cMarkerHex">#1e3a5f</code></label>
+      <span class="swatches" aria-label="Marker color presets"></span>
+      <label>Edge <input type="color" id="cEdge" value="#ffffff"> <code id="cEdgeHex">#ffffff</code></label>
+      <label>Alt <input type="color" id="cAlt" value="#17a2d9"> <code id="cAltHex">#17a2d9</code></label>
+      <label>Dim <input type="color" id="cDim" value="#14181f"> <code id="cDimHex">#14181f</code> <input type="range" id="dimA" min="0" max="0.85" step="0.05" value="0.38" aria-label="Dim strength"> <code id="dimAVal">38%</code></label>
+      <button type="button" id="resetBtn">Reset colors</button>
+      <button type="button" id="copyBtn">Copy settings</button>
+      <span id="copied" role="status" aria-live="polite"></span>
+    </div>
   </section>
 
   <section class="card" aria-labelledby="pickTitle">
@@ -190,11 +211,11 @@ const VARIANTS = [
   { id: 'v6',  name: 'Dot and ping',       desc: 'A small dot with a ring that radiates outward. Motion draws the eye.', breathes: false },
   { id: 'v7',  name: 'Arrow',              desc: 'An arrow from the upper left with its tip on the spot. Covers nothing.', breathes: true },
   { id: 'v8',  name: 'Focus brackets',     desc: 'Four corners of a square, like a camera focus box.', breathes: true },
-  { id: 'v9',  name: 'Cyan ring',          desc: 'A ring in a hue the tissue never has, edged in navy.', breathes: true },
+  { id: 'v9',  name: 'Two-tone ring',      desc: 'A ring in the alt color, edged in the marker color.', breathes: true },
   { id: 'v10', name: 'Spotlight',          desc: 'Everything except a window around the structure dims.', breathes: false },
 ];
 const INNER = {
-  v7: '<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g><g fill="none" stroke="#1e3a5f" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g></svg>',
+  v7: '<svg viewBox="0 0 48 48" aria-hidden="true"><g class="halo" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g><g class="ink" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 L44 44"/><path d="M44 44 L30 42 M44 44 L42 30"/></g></svg>',
   v8: '<i></i><i></i><i></i><i></i>',
 };
 
@@ -250,6 +271,47 @@ sizeRange.addEventListener('input', () => { stage.style.setProperty('--s', sizeR
 const animate = document.getElementById('animate');
 function paintAnimate() { stage.classList.toggle('animate', animate.checked); }
 animate.addEventListener('change', paintAnimate); paintAnimate();
+
+/* ---- colors: each design draws from the same few variables ---- */
+const PRESETS = ['#1e3a5f', '#17a2d9', '#e0b040', '#c8322b', '#2f7a3d', '#b5179e', '#ffffff', '#111111'];
+const COLOR_INPUTS = { marker: 'cMarker', edge: 'cEdge', alt: 'cAlt', dim: 'cDim' };
+const store = { get: k => { try { return localStorage.getItem('oo.mock.' + k); } catch (_) { return null; } },
+                set: (k, v) => { try { localStorage.setItem('oo.mock.' + k, v); } catch (_) {} } };
+function applyColor(name, value) {
+  stage.style.setProperty('--' + name, value);
+  const input = document.getElementById(COLOR_INPUTS[name]);
+  input.value = value;
+  const hex = document.getElementById(COLOR_INPUTS[name] + 'Hex');
+  if (hex) hex.textContent = value;
+  store.set(name, value);
+}
+Object.keys(COLOR_INPUTS).forEach(name => {
+  const input = document.getElementById(COLOR_INPUTS[name]);
+  input.addEventListener('input', () => applyColor(name, input.value));
+  const saved = store.get(name);
+  if (saved && /^#[0-9a-f]{6}$/i.test(saved)) applyColor(name, saved);
+});
+const dimA = document.getElementById('dimA');
+function applyDimA(v) { stage.style.setProperty('--dimA', v); dimA.value = v; document.getElementById('dimAVal').textContent = Math.round(v * 100) + '%'; store.set('dimA', v); }
+dimA.addEventListener('input', () => applyDimA(dimA.value));
+if (store.get('dimA') !== null) applyDimA(store.get('dimA'));
+const sw = document.querySelector('.swatches');
+PRESETS.forEach(c => {
+  const b = document.createElement('button'); b.type = 'button'; b.style.background = c;
+  b.setAttribute('aria-label', 'Marker color ' + c); b.title = c;
+  b.addEventListener('click', () => applyColor('marker', c));
+  sw.appendChild(b);
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  applyColor('marker', '#1e3a5f'); applyColor('edge', '#ffffff'); applyColor('alt', '#17a2d9'); applyColor('dim', '#14181f'); applyDimA(0.38);
+});
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const v = VARIANTS.find(x => x.id === current);
+  const text = `Marker: ${VARIANTS.indexOf(v) + 1} ${v.name} · size ${(+sizeRange.value).toFixed(2)}× · marker ${stage.style.getPropertyValue('--marker') || '#1e3a5f'} · edge ${stage.style.getPropertyValue('--edge') || '#ffffff'} · alt ${stage.style.getPropertyValue('--alt') || '#17a2d9'} · dim ${stage.style.getPropertyValue('--dim') || '#14181f'} at ${Math.round((+dimA.value) * 100)}% · animate ${animate.checked ? 'on' : 'off'}`;
+  try { await navigator.clipboard.writeText(text); } catch (_) {}
+  const c = document.getElementById('copied'); c.textContent = 'Copied: ' + text;
+  setTimeout(() => { c.textContent = ''; }, 6000);
+});
 
 const sel = document.getElementById('structSel');
 sel.addEventListener('change', () => { struct = structures.find(s => s.flag === sel.value); place(); });
