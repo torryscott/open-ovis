@@ -71,6 +71,8 @@ The atlas has a **List view** button that shows every visible structure with its
 
 A structure may also carry a `zone`: a list of `[x, y]` fractions outlining the region a Find it tap should count for, traced with the capture tool's Draw zone button. Structures without a zone are graded by distance to their marker.
 
+The capture tool works without a mouse: list rows take the arrow keys and Enter, **Add at center** places a marker, and with the plate focused the arrow keys nudge the dot (`D`), the pill (`P`), or a zone corner (`Z`, `[` and `]` to change corner) by 1 px, or 10 px with Shift. A zone can be traced with the arrow keys and Space. The Keyboard panel in the tool lists all of it.
+
 ## How the flag system works
 
 Each structure has a permanent short code — a view letter plus a number — and a long flag

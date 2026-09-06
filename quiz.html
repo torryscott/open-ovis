@@ -629,7 +629,7 @@
     el('promptFind').hidden = !find;
     el('promptDescribe').hidden = !describe;
     el('describeText').hidden = !describe;
-    el('describeText').textContent = describe ? (s.about || '') : '';
+    el('describeText').textContent = describe ? maskDefinition(s.about, s) : '';
     el('findHelp').hidden = !find;
     el('findName').textContent = s.name;
     el('answerInput').hidden = find;
@@ -888,6 +888,28 @@
   stillX.checked = still;
   document.body.classList.toggle('still', still);
   stillX.addEventListener('change', function () { document.body.classList.toggle('still', stillX.checked); store.set('oo.quiz.still', stillX.checked ? '1' : '0'); });
+
+  /* Describe it shows a definition, and many definitions name the structure
+     they describe. Mask the name, its accepted synonyms, and word forms built
+     on the name's stems (cerebellar for Cerebellum), leaving a blank. */
+  var MASK_STOP = /^(body|bodies|matter|lateral|medial|superior|inferior|anterior|posterior|middle|third|fourth|cerebral|gray|grey|white|the|of|and|tract|nerve)$/i;
+  function maskDefinition(text, s) {
+    var out = text || '';
+    var esc = function (str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+    [s.name].concat(s.accept || []).forEach(function (n) {
+      n = (n || '').trim();
+      if (!n) return;
+      out = out.replace(new RegExp('\\b' + esc(n).replace(/\s+/g, '\\s+') + '(s|es)?\\b', 'gi'), '____');
+    });
+    s.name.split(/\s+/).forEach(function (w) {
+      w = w.replace(/[^a-z]/gi, '');
+      if (w.length < 5 || MASK_STOP.test(w)) return;
+      var root = w.replace(/(ies|es|um|us|ae|is|ic|al|ar|s|a|i|e)$/i, '');
+      if (root.length < 4) root = w;
+      out = out.replace(new RegExp('\\b' + root + '\\w*', 'gi'), '____');
+    });
+    return out.replace(/____(\s+____)+/g, '____');
+  }
 
   /* The pool for a run: every allowed structure, except that Describe it
      needs a definition to show and skips any structure without one. */
